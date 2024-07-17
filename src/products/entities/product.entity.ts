@@ -37,7 +37,7 @@ export class Product {
   @Column('text', { array: true })
   sizes: string[];
 
-  @Column('enum', { enum: ['men', 'woman', 'kid', 'unisex'] })
+  @Column('enum', { enum: ['men', 'women', 'kid', 'unisex'] })
   gender: string;
 
   //TAGS
