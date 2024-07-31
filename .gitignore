@@ -60,3 +60,6 @@ postgres/
 
 # locks file
 yarn.lock
+
+# static files
+static/*

@@ -1,4 +1,6 @@
+import { join } from 'path';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { existsSync } from 'fs';
 
 @Injectable()
 export class FilesService {
@@ -6,8 +8,13 @@ export class FilesService {
     if (!file) {
       throw new BadRequestException('File is required');
     }
-
-    console.log(file);
     return { name: file.originalname, type: file.mimetype };
+  }
+
+  findStaticFile(fileName: string) {
+    const path: string = join(__dirname, '../../static/products', fileName);
+    if (!existsSync(path))
+      throw new BadRequestException('File not found with name: ' + fileName);
+    return path;
   }
 }
