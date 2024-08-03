@@ -8,8 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
-import { CreateUserDto } from './dto/create-user.dto';
+import { AuthUserDto, CreateUserDto } from './dto';
 import { User } from './entities/user.entity';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './interfaces/jwt-payload.interfaces';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +19,14 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly jwtService: JwtService,
   ) {}
+
+  private findJwtUser(payload: JwtPayload) {
+    const Token = this.jwtService.sign(payload);
+    return Token;
+  }
 
   async create(createUserDto: CreateUserDto) {
     try {
@@ -29,10 +38,32 @@ export class AuthService {
       });
       await this.userRepository.save(newUser);
       const { password: _, ...userWithOutPassword } = newUser;
-      return userWithOutPassword;
+      return {
+        ...userWithOutPassword,
+        token: this.findJwtUser({ id: userWithOutPassword.id }),
+      };
     } catch (error) {
       this.customHandleException(error);
     }
+  }
+
+  async login(authUserDto: AuthUserDto) {
+    const { password, email } = authUserDto;
+    const findUser = await this.userRepository.findOne({
+      where: { email },
+      select: { email: true, password: true, id: true },
+    });
+    if (!findUser) {
+      throw new BadRequestException('Credentials are not valid (email)');
+    }
+    if (!bcrypt.compareSync(password, findUser.password)) {
+      throw new BadRequestException('Credentials are not valid (password)');
+    }
+    return { ...findUser, token: this.findJwtUser({ id: findUser.id }) };
+  }
+
+  async checkToken(user: User) {
+    return { ...user, token: this.findJwtUser({ id: user.id }) };
   }
 
   private customHandleException(error: any): never {

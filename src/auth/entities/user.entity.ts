@@ -1,4 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Product } from 'src/products/entities';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 type Role = 'admin' | 'user' | 'guest';
 
@@ -22,6 +30,19 @@ export class User {
   @Column('bool', { default: true })
   isActive: boolean;
 
+  @OneToMany(() => Product, (product) => product.user)
+  product: Product;
+
   createdAt: Date;
   updatedAt: Date;
+
+  @BeforeInsert()
+  checkFieldsInsert() {
+    this.email = this.email.toLowerCase().trim();
+  }
+
+  @BeforeUpdate()
+  checkFieldsUpdate() {
+    this.checkFieldsInsert();
+  }
 }
